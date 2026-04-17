@@ -45,11 +45,7 @@ static int32_t spmm_csr_f64_scalar_impl(
     const int32_t m = matrix->n_rows;
     const int32_t n = matrix->n_cols;
 
-    for (int32_t j = 0; j < b_cols; ++j) {
-        for (int32_t i = 0; i < m; ++i) {
-            c[(size_t)i + (size_t)j * (size_t)m] = 0.0;
-        }
-    }
+    memset(c, 0, (size_t)m * (size_t)b_cols * sizeof(double));
 
     for (int32_t i = 0; i < m; ++i) {
         const int32_t start = matrix->row_ptr[i];
@@ -130,7 +126,11 @@ int32_t sciml_csr_f64_copy_data(
 }
 
 int32_t spmv_csr_f64(const sciml_csr_f64 *matrix, const double *x, double *y) {
+#if defined(__riscv_vector)
+    return spmv_csr_rvv_f64(matrix, x, y);
+#else
     return spmv_csr_f64_scalar_impl(matrix, x, y);
+#endif
 }
 
 int32_t spmv_csr_rvv_f64(const sciml_csr_f64 *matrix, const double *x, double *y) {
@@ -187,7 +187,11 @@ int32_t spmm_csr_f64(
     int32_t b_cols,
     double *c
 ) {
+#if defined(__riscv_vector)
+    return spmm_csr_rvv_f64(matrix, b, b_cols, c);
+#else
     return spmm_csr_f64_scalar_impl(matrix, b, b_cols, c);
+#endif
 }
 
 int32_t spmm_csr_rvv_f64(
@@ -206,11 +210,7 @@ int32_t spmm_csr_rvv_f64(
     const ptrdiff_t b_stride = (ptrdiff_t)n * (ptrdiff_t)sizeof(double);
     const ptrdiff_t c_stride = (ptrdiff_t)m * (ptrdiff_t)sizeof(double);
 
-    for (int32_t j = 0; j < b_cols; ++j) {
-        for (int32_t i = 0; i < m; ++i) {
-            c[(size_t)i + (size_t)j * (size_t)m] = 0.0;
-        }
-    }
+    memset(c, 0, (size_t)m * (size_t)b_cols * sizeof(double));
 
     for (int32_t i = 0; i < m; ++i) {
         const int32_t start = matrix->row_ptr[i];

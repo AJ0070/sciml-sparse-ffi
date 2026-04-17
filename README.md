@@ -133,6 +133,7 @@ mul!(C, A, B)
   - `row_ptr` as CSR row offsets
   - `col_idx` as **0-based** column indices (`Int32`)
 - In-place multiplication paths (`mul!`) avoid allocations in the kernel call path.
+- For RVV SpMM with Julia dense matrices, loads across output columns use strided access (`vlse64`) because Julia is column-major. This is the correctness-preserving layout compromise versus ideal row-major unit-stride (`vle64`) throughput.
 
 ## Benchmarks
 
