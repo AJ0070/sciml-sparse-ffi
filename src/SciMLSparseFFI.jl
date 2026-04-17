@@ -1,10 +1,12 @@
 module SciMLSparseFFI
 
 using Libdl
+using LinearAlgebra
 using SparseArrays
 
 include("raw_bindings.jl")
 include("CustomSparseMatrix.jl")
+include("mul_overloads.jl")
 
 export sciml_csr_f64,
        CSRPtr,
