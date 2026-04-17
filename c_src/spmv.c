@@ -119,25 +119,16 @@ int32_t spmv_csr_rvv_f64(const sciml_csr_f64 *matrix, const double *x, double *y
             vfloat64m1_t v_values = __riscv_vle64_v_f64m1(&matrix->values[k], vl);
             vint32m1_t v_cols_i32 = __riscv_vle32_v_i32m1(&matrix->col_idx[k], vl);
 
-            int32_t cols_chunk[vl];
-            __riscv_vse32_v_i32m1(cols_chunk, v_cols_i32, vl);
-
-            uint32_t offsets[vl];
-            for (size_t lane = 0; lane < vl; ++lane) {
-                offsets[lane] = (uint32_t)((uint32_t)cols_chunk[lane] * (uint32_t)sizeof(double));
-            }
-
-            vuint32m1_t v_offsets = __riscv_vle32_v_u32m1(offsets, vl);
+            vuint32m1_t v_cols_u32 = __riscv_vreinterpret_v_i32m1_u32m1(v_cols_i32);
+            vuint32m1_t v_offsets = __riscv_vsll_vx_u32m1(v_cols_u32, 3, vl);
             vfloat64m1_t v_x = __riscv_vluxei32_v_f64m1(x, v_offsets, vl);
 
             vfloat64m1_t v_acc = __riscv_vfmv_v_f_f64m1(0.0, vl);
             v_acc = __riscv_vfmacc_vv_f64m1(v_acc, v_values, v_x, vl);
 
-            double partials[vl];
-            __riscv_vse64_v_f64m1(partials, v_acc, vl);
-            for (size_t lane = 0; lane < vl; ++lane) {
-                sum += partials[lane];
-            }
+            vfloat64m1_t v_zero = __riscv_vfmv_v_f_f64m1(0.0, 1);
+            vfloat64m1_t v_red = __riscv_vfredusum_vs_f64m1_f64m1(v_acc, v_zero, vl);
+            sum += __riscv_vfmv_f_s_f64m1_f64(v_red);
 
             k += (int32_t)vl;
         }
