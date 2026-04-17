@@ -1,4 +1,4 @@
-struct CSparseMatrixCSR <: AbstractSparseMatrix{Float64, Int32}
+mutable struct CSparseMatrixCSR <: AbstractSparseMatrix{Float64, Int32}
     n_rows::Int32
     n_cols::Int32
     row_ptr::Vector{Int32}
