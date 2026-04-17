@@ -14,6 +14,11 @@ target_include_directories(sciml_sparse_ffi
         ${CMAKE_CURRENT_SOURCE_DIR}/c_include
 )
 
+target_compile_definitions(sciml_sparse_ffi
+    PRIVATE
+        SCIML_SPARSE_FFI_BUILD
+)
+
 if(MSVC)
     target_compile_options(sciml_sparse_ffi PRIVATE /O2)
 else()

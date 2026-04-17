@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+    #if defined(SCIML_SPARSE_FFI_BUILD)
+        #define SCIML_SPARSE_API __declspec(dllexport)
+    #else
+        #define SCIML_SPARSE_API __declspec(dllimport)
+    #endif
+#else
+    #define SCIML_SPARSE_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,20 +26,20 @@ typedef struct sciml_csr_f64 {
     double *values;
 } sciml_csr_f64;
 
-sciml_csr_f64 *sciml_csr_f64_create(int32_t n_rows, int32_t n_cols, int32_t nnz);
+SCIML_SPARSE_API sciml_csr_f64 *sciml_csr_f64_create(int32_t n_rows, int32_t n_cols, int32_t nnz);
 
-void sciml_csr_f64_destroy(sciml_csr_f64 *matrix);
+SCIML_SPARSE_API void sciml_csr_f64_destroy(sciml_csr_f64 *matrix);
 
-int32_t sciml_csr_f64_copy_data(
+SCIML_SPARSE_API int32_t sciml_csr_f64_copy_data(
     sciml_csr_f64 *matrix,
     const int32_t *row_ptr,
     const int32_t *col_idx,
     const double *values
 );
 
-int32_t spmv_csr_f64(const sciml_csr_f64 *matrix, const double *x, double *y);
+SCIML_SPARSE_API int32_t spmv_csr_f64(const sciml_csr_f64 *matrix, const double *x, double *y);
 
-int32_t spmm_csr_f64(
+SCIML_SPARSE_API int32_t spmm_csr_f64(
     const sciml_csr_f64 *matrix,
     const double *b,
     int32_t b_cols,
