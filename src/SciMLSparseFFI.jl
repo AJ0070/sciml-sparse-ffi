@@ -1,0 +1,16 @@
+module SciMLSparseFFI
+
+using Libdl
+
+include("raw_bindings.jl")
+
+export sciml_csr_f64,
+       CSRPtr,
+       csr_create,
+       csr_destroy,
+       csr_copy_data!,
+       spmv_csr_f64!,
+       spmm_csr_f64!,
+       set_library_path!
+
+end

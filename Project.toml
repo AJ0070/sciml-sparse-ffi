@@ -1,0 +1,7 @@
+name = "SciMLSparseFFI"
+uuid = "0f30a44b-a534-4f26-b7a7-0b6a8c8c5b50"
+authors = ["sciml-sparse-ffi contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.10"
