@@ -83,14 +83,14 @@ jobs:
 
       - name: Publish GitHub Release assets (Unix)
         if: startsWith(github.ref, 'refs/tags/') && runner.os != 'Windows'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: sciml-sparse-ffi-${{ matrix.os }}.tar.gz
           generate_release_notes: true
 
       - name: Publish GitHub Release assets (Windows)
         if: startsWith(github.ref, 'refs/tags/') && runner.os == 'Windows'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: sciml-sparse-ffi-${{ matrix.os }}.zip
           generate_release_notes: true
