@@ -123,8 +123,7 @@ int32_t spmv_csr_rvv_f64(const sciml_csr_f64 *matrix, const double *x, double *y
             vuint32m1_t v_offsets = __riscv_vsll_vx_u32m1(v_cols_u32, 3, vl);
             vfloat64m1_t v_x = __riscv_vluxei32_v_f64m1(x, v_offsets, vl);
 
-            vfloat64m1_t v_acc = __riscv_vfmv_v_f_f64m1(0.0, vl);
-            v_acc = __riscv_vfmacc_vv_f64m1(v_acc, v_values, v_x, vl);
+            vfloat64m1_t v_acc = __riscv_vfmul_vv_f64m1(v_values, v_x, vl);
 
             vfloat64m1_t v_zero = __riscv_vfmv_v_f_f64m1(0.0, 1);
             vfloat64m1_t v_red = __riscv_vfredusum_vs_f64m1_f64m1(v_acc, v_zero, vl);
