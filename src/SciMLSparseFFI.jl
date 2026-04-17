@@ -1,8 +1,10 @@
 module SciMLSparseFFI
 
 using Libdl
+using SparseArrays
 
 include("raw_bindings.jl")
+include("CustomSparseMatrix.jl")
 
 export sciml_csr_f64,
        CSRPtr,
@@ -11,6 +13,7 @@ export sciml_csr_f64,
        csr_copy_data!,
        spmv_csr_f64!,
        spmm_csr_f64!,
-       set_library_path!
+    set_library_path!,
+    CSparseMatrixCSR
 
 end
