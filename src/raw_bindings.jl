@@ -100,3 +100,14 @@ function spmm_csr_f64!(matrix::CSRPtr, b::StridedMatrix{Float64}, c::StridedMatr
     _check_status(status, "spmm_csr_f64")
     return c
 end
+
+function spmm_csr_rvv_f64!(matrix::CSRPtr, b::StridedMatrix{Float64}, c::StridedMatrix{Float64})
+    status = @ccall _libpath().spmm_csr_rvv_f64(
+        matrix::CSRPtr,
+        b::Ptr{Float64},
+        Int32(size(b, 2))::Int32,
+        c::Ptr{Float64}
+    )::Cint
+    _check_status(status, "spmm_csr_rvv_f64")
+    return c
+end

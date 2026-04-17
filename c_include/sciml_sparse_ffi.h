@@ -48,6 +48,13 @@ SCIML_SPARSE_API int32_t spmm_csr_f64(
     double *c
 );
 
+SCIML_SPARSE_API int32_t spmm_csr_rvv_f64(
+    const sciml_csr_f64 *matrix,
+    const double *b,
+    int32_t b_cols,
+    double *c
+);
+
 #ifdef __cplusplus
 }
 #endif

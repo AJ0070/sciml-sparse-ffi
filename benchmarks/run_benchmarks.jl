@@ -48,7 +48,8 @@ function run_benchmarks(; m::Int = 10_000, n::Int = 10_000, density::Float64 = 5
 
     B = randn(n, b_cols)
     C_native = zeros(m, b_cols)
-    C_ffi = similar(C_native)
+    C_ffi_scalar = similar(C_native)
+    C_ffi_rvv = similar(C_native)
 
     println("Matrix dimensions: $(m)x$(n), density=$(density), nnz=$(nnz(A_native))")
 
@@ -56,9 +57,10 @@ function run_benchmarks(; m::Int = 10_000, n::Int = 10_000, density::Float64 = 5
     @btime mul!($y_native, $A_native, $x)
     @btime mul!($y_ffi, $A_ffi, $x)
 
-    println("\nSpMM: SparseArrays mul! vs FFI mul!")
+    println("\nSpMM: SparseArrays mul! vs FFI scalar vs FFI RVV-entry")
     @btime mul!($C_native, $A_native, $B)
-    @btime mul!($C_ffi, $A_ffi, $B)
+    @btime spmm_csr_f64!($(A_ffi.handle), $B, $C_ffi_scalar)
+    @btime spmm_csr_rvv_f64!($(A_ffi.handle), $B, $C_ffi_rvv)
 
     println("\nVerification")
     mul!(y_native, A_native, x)
@@ -66,8 +68,10 @@ function run_benchmarks(; m::Int = 10_000, n::Int = 10_000, density::Float64 = 5
     println("SpMV relative error: ", norm(y_native - y_ffi) / (norm(y_native) + eps()))
 
     mul!(C_native, A_native, B)
-    mul!(C_ffi, A_ffi, B)
-    println("SpMM relative error: ", norm(C_native - C_ffi) / (norm(C_native) + eps()))
+    spmm_csr_f64!(A_ffi.handle, B, C_ffi_scalar)
+    spmm_csr_rvv_f64!(A_ffi.handle, B, C_ffi_rvv)
+    println("SpMM scalar-FFI relative error: ", norm(C_native - C_ffi_scalar) / (norm(C_native) + eps()))
+    println("SpMM RVV-entry relative error: ", norm(C_native - C_ffi_rvv) / (norm(C_native) + eps()))
 
     return nothing
 end

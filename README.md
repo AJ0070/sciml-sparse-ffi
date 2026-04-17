@@ -25,6 +25,7 @@ The result is a portable path to experiment with external sparse kernels while s
   - `spmv_csr_f64` (CSR × dense vector)
   - `spmv_csr_rvv_f64` (RVV-accelerated CSR × dense vector, scalar fallback on non-RVV builds)
   - `spmm_csr_f64` (CSR × dense matrix)
+  - `spmm_csr_rvv_f64` (RVV SAXPY-style CSR × dense matrix, scalar fallback on non-RVV builds)
 - Julia raw FFI bindings (`@ccall`)
 - Julia sparse wrapper type (`CSparseMatrixCSR`)
 - Dispatch bridge:

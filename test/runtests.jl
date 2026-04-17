@@ -53,6 +53,10 @@ end
             C = zeros(Float64, m, size(B, 2))
             spmm_csr_f64!(handle, B, C)
             @test C ≈ Matrix(Aref * B)
+
+            C_rvv = zeros(Float64, m, size(B, 2))
+            spmm_csr_rvv_f64!(handle, B, C_rvv)
+            @test C_rvv ≈ Matrix(Aref * B)
         finally
             csr_destroy(handle)
         end

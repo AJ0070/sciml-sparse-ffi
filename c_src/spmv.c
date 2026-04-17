@@ -32,6 +32,46 @@ static int32_t spmv_csr_f64_scalar_impl(const sciml_csr_f64 *matrix, const doubl
     return 0;
 }
 
+static int32_t spmm_csr_f64_scalar_impl(
+    const sciml_csr_f64 *matrix,
+    const double *b,
+    int32_t b_cols,
+    double *c
+) {
+    if (!matrix || !matrix->row_ptr || !matrix->col_idx || !matrix->values || !b || !c || b_cols < 0) {
+        return -1;
+    }
+
+    const int32_t m = matrix->n_rows;
+    const int32_t n = matrix->n_cols;
+
+    for (int32_t j = 0; j < b_cols; ++j) {
+        for (int32_t i = 0; i < m; ++i) {
+            c[(size_t)i + (size_t)j * (size_t)m] = 0.0;
+        }
+    }
+
+    for (int32_t i = 0; i < m; ++i) {
+        const int32_t start = matrix->row_ptr[i];
+        const int32_t stop = matrix->row_ptr[i + 1];
+
+        for (int32_t k = start; k < stop; ++k) {
+            const int32_t col = matrix->col_idx[k];
+            if (col < 0 || col >= n) {
+                return -2;
+            }
+
+            const double a = matrix->values[k];
+            for (int32_t j = 0; j < b_cols; ++j) {
+                c[(size_t)i + (size_t)j * (size_t)m] +=
+                    a * b[(size_t)col + (size_t)j * (size_t)n];
+            }
+        }
+    }
+
+    return 0;
+}
+
 sciml_csr_f64 *sciml_csr_f64_create(int32_t n_rows, int32_t n_cols, int32_t nnz) {
     if (n_rows < 0 || n_cols < 0 || nnz < 0) {
         return NULL;
@@ -147,12 +187,24 @@ int32_t spmm_csr_f64(
     int32_t b_cols,
     double *c
 ) {
+    return spmm_csr_f64_scalar_impl(matrix, b, b_cols, c);
+}
+
+int32_t spmm_csr_rvv_f64(
+    const sciml_csr_f64 *matrix,
+    const double *b,
+    int32_t b_cols,
+    double *c
+) {
+#if defined(__riscv_vector)
     if (!matrix || !matrix->row_ptr || !matrix->col_idx || !matrix->values || !b || !c || b_cols < 0) {
         return -1;
     }
 
     const int32_t m = matrix->n_rows;
     const int32_t n = matrix->n_cols;
+    const ptrdiff_t b_stride = (ptrdiff_t)n * (ptrdiff_t)sizeof(double);
+    const ptrdiff_t c_stride = (ptrdiff_t)m * (ptrdiff_t)sizeof(double);
 
     for (int32_t j = 0; j < b_cols; ++j) {
         for (int32_t i = 0; i < m; ++i) {
@@ -171,12 +223,26 @@ int32_t spmm_csr_f64(
             }
 
             const double a = matrix->values[k];
-            for (int32_t j = 0; j < b_cols; ++j) {
-                c[(size_t)i + (size_t)j * (size_t)m] +=
-                    a * b[(size_t)col + (size_t)j * (size_t)n];
+            int32_t j = 0;
+            while (j < b_cols) {
+                const size_t remaining = (size_t)(b_cols - j);
+                const size_t vl = __riscv_vsetvl_e64m1(remaining);
+
+                const double *b_ptr = &b[(size_t)col + (size_t)j * (size_t)n];
+                double *c_ptr = &c[(size_t)i + (size_t)j * (size_t)m];
+
+                vfloat64m1_t v_b = __riscv_vlse64_v_f64m1(b_ptr, b_stride, vl);
+                vfloat64m1_t v_c = __riscv_vlse64_v_f64m1(c_ptr, c_stride, vl);
+                v_c = __riscv_vfmacc_vf_f64m1(v_c, a, v_b, vl);
+                __riscv_vsse64_v_f64m1(c_ptr, c_stride, v_c, vl);
+
+                j += (int32_t)vl;
             }
         }
     }
 
     return 0;
+#else
+    return spmm_csr_f64_scalar_impl(matrix, b, b_cols, c);
+#endif
 }
