@@ -53,7 +53,10 @@ jobs:
             echo "Shared library not found in build/"
             exit 1
           fi
-          cp "${found}" "build/libsciml_sparse_ffi.${ext}"
+          target="build/libsciml_sparse_ffi.${ext}"
+          if [[ "${found}" != "${target}" ]]; then
+            cp "${found}" "${target}"
+          fi
 
       - name: Normalize shared library path (Windows)
         if: runner.os == 'Windows'
@@ -64,7 +67,10 @@ jobs:
             Write-Error "Shared library not found in build/"
             exit 1
           }
-          Copy-Item $dll.FullName "build/libsciml_sparse_ffi.dll" -Force
+          $target = (Resolve-Path "build").Path + [IO.Path]::DirectorySeparatorChar + "libsciml_sparse_ffi.dll"
+          if ($dll.FullName -ne $target) {
+            Copy-Item $dll.FullName $target -Force
+          }
 
       - name: Instantiate dependencies
         run: julia --project=. -e "using Pkg; Pkg.instantiate()"
