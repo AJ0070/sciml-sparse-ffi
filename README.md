@@ -23,6 +23,7 @@ The result is a portable path to experiment with external sparse kernels while s
 - C API for allocation, copy-in, destruction
 - C kernels:
   - `spmv_csr_f64` (CSR × dense vector)
+  - `spmv_csr_rvv_f64` (RVV-accelerated CSR × dense vector, scalar fallback on non-RVV builds)
   - `spmm_csr_f64` (CSR × dense matrix)
 - Julia raw FFI bindings (`@ccall`)
 - Julia sparse wrapper type (`CSparseMatrixCSR`)

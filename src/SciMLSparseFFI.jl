@@ -14,6 +14,7 @@ export sciml_csr_f64,
        csr_destroy,
        csr_copy_data!,
        spmv_csr_f64!,
+         spmv_csr_rvv_f64!,
        spmm_csr_f64!,
     set_library_path!,
     CSparseMatrixCSR

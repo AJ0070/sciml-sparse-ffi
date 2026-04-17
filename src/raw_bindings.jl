@@ -80,6 +80,16 @@ function spmv_csr_f64!(matrix::CSRPtr, x::StridedVector{Float64}, y::StridedVect
     return y
 end
 
+function spmv_csr_rvv_f64!(matrix::CSRPtr, x::StridedVector{Float64}, y::StridedVector{Float64})
+    status = @ccall _libpath().spmv_csr_rvv_f64(
+        matrix::CSRPtr,
+        x::Ptr{Float64},
+        y::Ptr{Float64}
+    )::Cint
+    _check_status(status, "spmv_csr_rvv_f64")
+    return y
+end
+
 function spmm_csr_f64!(matrix::CSRPtr, b::StridedMatrix{Float64}, c::StridedMatrix{Float64})
     status = @ccall _libpath().spmm_csr_f64(
         matrix::CSRPtr,

@@ -40,6 +40,10 @@ end
             spmv_csr_f64!(handle, x, y)
             @test y ≈ Array(Aref * x)
 
+            y_rvv = zeros(Float64, m)
+            spmv_csr_rvv_f64!(handle, x, y_rvv)
+            @test y_rvv ≈ Array(Aref * x)
+
             B = [
                 1.0  0.0
                 2.0 -1.0

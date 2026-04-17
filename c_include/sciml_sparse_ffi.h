@@ -39,6 +39,8 @@ SCIML_SPARSE_API int32_t sciml_csr_f64_copy_data(
 
 SCIML_SPARSE_API int32_t spmv_csr_f64(const sciml_csr_f64 *matrix, const double *x, double *y);
 
+SCIML_SPARSE_API int32_t spmv_csr_rvv_f64(const sciml_csr_f64 *matrix, const double *x, double *y);
+
 SCIML_SPARSE_API int32_t spmm_csr_f64(
     const sciml_csr_f64 *matrix,
     const double *b,

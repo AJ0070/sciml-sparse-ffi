@@ -1,7 +1,36 @@
 #include "sciml_sparse_ffi.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(__riscv_vector)
+    #include <riscv_vector.h>
+#endif
+
+static int32_t spmv_csr_f64_scalar_impl(const sciml_csr_f64 *matrix, const double *x, double *y) {
+    if (!matrix || !matrix->row_ptr || !matrix->col_idx || !matrix->values || !x || !y) {
+        return -1;
+    }
+
+    for (int32_t i = 0; i < matrix->n_rows; ++i) {
+        const int32_t start = matrix->row_ptr[i];
+        const int32_t stop = matrix->row_ptr[i + 1];
+        double sum = 0.0;
+
+        for (int32_t k = start; k < stop; ++k) {
+            const int32_t col = matrix->col_idx[k];
+            if (col < 0 || col >= matrix->n_cols) {
+                return -2;
+            }
+            sum += matrix->values[k] * x[col];
+        }
+
+        y[i] = sum;
+    }
+
+    return 0;
+}
 
 sciml_csr_f64 *sciml_csr_f64_create(int32_t n_rows, int32_t n_cols, int32_t nnz) {
     if (n_rows < 0 || n_cols < 0 || nnz < 0) {
@@ -61,6 +90,11 @@ int32_t sciml_csr_f64_copy_data(
 }
 
 int32_t spmv_csr_f64(const sciml_csr_f64 *matrix, const double *x, double *y) {
+    return spmv_csr_f64_scalar_impl(matrix, x, y);
+}
+
+int32_t spmv_csr_rvv_f64(const sciml_csr_f64 *matrix, const double *x, double *y) {
+#if defined(__riscv_vector)
     if (!matrix || !matrix->row_ptr || !matrix->col_idx || !matrix->values || !x || !y) {
         return -1;
     }
@@ -68,20 +102,53 @@ int32_t spmv_csr_f64(const sciml_csr_f64 *matrix, const double *x, double *y) {
     for (int32_t i = 0; i < matrix->n_rows; ++i) {
         const int32_t start = matrix->row_ptr[i];
         const int32_t stop = matrix->row_ptr[i + 1];
-        double sum = 0.0;
 
         for (int32_t k = start; k < stop; ++k) {
             const int32_t col = matrix->col_idx[k];
             if (col < 0 || col >= matrix->n_cols) {
                 return -2;
             }
-            sum += matrix->values[k] * x[col];
+        }
+
+        double sum = 0.0;
+        int32_t k = start;
+        while (k < stop) {
+            const size_t remaining = (size_t)(stop - k);
+            const size_t vl = __riscv_vsetvl_e64m1(remaining);
+
+            vfloat64m1_t v_values = __riscv_vle64_v_f64m1(&matrix->values[k], vl);
+            vint32m1_t v_cols_i32 = __riscv_vle32_v_i32m1(&matrix->col_idx[k], vl);
+
+            int32_t cols_chunk[vl];
+            __riscv_vse32_v_i32m1(cols_chunk, v_cols_i32, vl);
+
+            uint32_t offsets[vl];
+            for (size_t lane = 0; lane < vl; ++lane) {
+                offsets[lane] = (uint32_t)((uint32_t)cols_chunk[lane] * (uint32_t)sizeof(double));
+            }
+
+            vuint32m1_t v_offsets = __riscv_vle32_v_u32m1(offsets, vl);
+            vfloat64m1_t v_x = __riscv_vluxei32_v_f64m1(x, v_offsets, vl);
+
+            vfloat64m1_t v_acc = __riscv_vfmv_v_f_f64m1(0.0, vl);
+            v_acc = __riscv_vfmacc_vv_f64m1(v_acc, v_values, v_x, vl);
+
+            double partials[vl];
+            __riscv_vse64_v_f64m1(partials, v_acc, vl);
+            for (size_t lane = 0; lane < vl; ++lane) {
+                sum += partials[lane];
+            }
+
+            k += (int32_t)vl;
         }
 
         y[i] = sum;
     }
 
     return 0;
+#else
+    return spmv_csr_f64_scalar_impl(matrix, x, y);
+#endif
 }
 
 int32_t spmm_csr_f64(
